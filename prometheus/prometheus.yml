@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: prometheus-test
     static_configs:
       - targets:
-          - localhost:9090
+          - prometheus-test:9090
 
   - job_name: node-exporter-test
     static_configs:

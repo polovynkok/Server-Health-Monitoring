@@ -15,11 +15,10 @@ services:
 
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./data/prometheus:/prometheus
+      - prometheus-test-data:/prometheus
 
     networks:
       - monitoring-test
-
 
   grafana-test:
     image: grafana/grafana-oss:12.1.1
@@ -38,11 +37,10 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
 
     volumes:
-      - ./data/grafana:/var/lib/grafana
+      - grafana-test-data:/var/lib/grafana
 
     networks:
       - monitoring-test
-
 
   node-exporter-test:
     image: prom/node-exporter:v1.9.1
@@ -55,8 +53,13 @@ services:
     networks:
       - monitoring-test
 
+volumes:
+  prometheus-test-data:
+    name: monitoring-test_prometheus-test-data
+
+  grafana-test-data:
+    name: monitoring-test_grafana-test-data
 
 networks:
-
   monitoring-test:
     driver: bridge

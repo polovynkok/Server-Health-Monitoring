@@ -5,11 +5,11 @@ pipeline {
 
     environment {
 
-        TELEGRAM_TOKEN = credentials('telegram-token')
-        TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
-
         SERVER = "192.168.40.117"
         SSH_USER = "nik"
+
+        TELEGRAM_TOKEN = credentials('telegram-token')
+        TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
 
     }
 
@@ -26,7 +26,7 @@ pipeline {
 
                 sh '''
                 ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER} \
-                "/opt/scripts/deploy-monitoring-test.sh"
+                "bash /opt/scripts/deploy-monitoring-test.sh"
                 '''
 
             }
@@ -42,41 +42,33 @@ pipeline {
 
 
                 sh '''
+                ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER} '
 
-                ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SERVER} "
+                echo "Checking containers..."
 
-                echo 'Checking containers...'
-
-
-                docker ps --format '{{.Names}} {{.Status}}' | grep prometheus-test
-
-                docker ps --format '{{.Names}} {{.Status}}' | grep grafana-test
-
-                docker ps --format '{{.Names}} {{.Status}}' | grep node-exporter-test
+                docker ps | grep prometheus-test
+                docker ps | grep grafana-test
+                docker ps | grep node-exporter-test
 
 
-
-                echo 'Checking Prometheus...'
+                echo "Checking Prometheus..."
 
                 curl -f http://localhost:9190/-/healthy
 
 
-
-                echo 'Checking Grafana...'
+                echo "Checking Grafana..."
 
                 curl -f http://localhost:3300/api/health
 
 
-
-                echo 'Checking Node Exporter...'
+                echo "Checking Node Exporter..."
 
                 curl -f http://localhost:9110/metrics > /dev/null
 
 
-                echo 'All services OK'
+                echo "All services are OK"
 
-                "
-
+                '
                 '''
 
             }
@@ -92,15 +84,13 @@ pipeline {
 
         success {
 
-            sh '''
-
+            sh """
             curl -s -X POST \
             "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d text="✅ Server Health Monitor
+            --data-urlencode "text=✅ Server Health Monitor
 
 🚀 Deploy: SUCCESS
-
 
 📊 Monitoring Stack:
 
@@ -108,19 +98,15 @@ pipeline {
 🟢 Grafana: UP
 🟢 Node Exporter: UP
 
-
 🖥 Server:
 ${SERVER}
-
 
 🔧 Jenkins Build:
 ${BUILD_NUMBER}
 
-
 ⏱ Duration:
 ${currentBuild.durationString}"
-
-            '''
+            """
 
         }
 
@@ -128,37 +114,27 @@ ${currentBuild.durationString}"
 
         failure {
 
-            sh '''
-
+            sh """
             curl -s -X POST \
             "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d text="❌ Server Health Monitor
-
+            --data-urlencode "text=❌ Server Health Monitor
 
 🔥 Deploy: FAILED
-
-
-📊 Monitoring Stack:
-
-🔴 Health check failed
-
 
 🖥 Server:
 ${SERVER}
 
-
 🔧 Jenkins Build:
 ${BUILD_NUMBER}
 
-
-Check Jenkins console logs"
-
-            '''
+Check Jenkins logs"
+            """
 
         }
 
 
     }
+
 
 }

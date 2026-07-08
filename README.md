@@ -11,3 +11,5 @@ Monitoring stack for Ubuntu Server.
 ## Deployment
 
 docker compose up -d
+
+And work messages in telegram for server health
